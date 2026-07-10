@@ -30,5 +30,6 @@ docs/specs/
 | Task | See |
 |------|-----|
 | Workspace orientation | [`../../AGENTS.md`](../../AGENTS.md) |
+| Backlog (GitHub Issues) | [y0n1/brewui issues](https://github.com/y0n1/brewui/issues) |
 | Wiki catalog | [`../../wiki/index.md`](../../wiki/index.md) |
 | Feature specs | files in this directory |

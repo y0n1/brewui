@@ -14,6 +14,7 @@ Before making any style, design, or architecture decision, prefer an existing ap
 - Work **spec-driven**: capture requirements and acceptance criteria in `docs/specs/` before implementing features.
 - Maintain a compounding knowledge base in `wiki/` (Karpathy LLM wiki, OKF-compliant) so context accumulates across sessions rather than being rediscovered from scratch.
 - Keep this workspace harness (`AGENTS.md`, docs, rules) aligned with what actually works.
+- Track actionable work on **GitHub Issues** ([y0n1/brewui](https://github.com/y0n1/brewui/issues)); keep requirements in `docs/specs/` and durable learnings in `wiki/`.
 
 ## Folder structure
 
@@ -40,6 +41,7 @@ Before making any style, design, or architecture decision, prefer an existing ap
 
 | Task | See |
 |------|-----|
+| Backlog (issues, bugs, tasks) | [github.com/y0n1/brewui/issues](https://github.com/y0n1/brewui/issues) · [`wiki/workspace/backlog.md`](wiki/workspace/backlog.md) |
 | Specs, requirements, acceptance criteria | [`docs/specs/`](docs/specs/) |
 | How to write / consume specs | [`docs/specs/AGENTS.md`](docs/specs/AGENTS.md) |
 | Wiki maintenance (ingest / query / lint) | [`.cursor/rules/llm-wiki.mdc`](.cursor/rules/llm-wiki.mdc) |
