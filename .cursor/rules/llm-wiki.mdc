@@ -1,0 +1,127 @@
+---
+description: >-
+  Karpathy LLM Wiki (OKF v0.1) — proactively maintain wiki/index.md, wiki/log.md,
+  and concept pages; ingest durable learnings without waiting for the user.
+alwaysApply: true
+---
+
+# LLM Wiki (Karpathy pattern + OKF v0.1)
+
+## Purpose
+
+Turn substantive work into a **durable knowledgebase** — facts, constraints, decisions, and "do not repeat" mistakes — following the [Karpathy LLM Wiki pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) and the [Open Knowledge Format (OKF) v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md).
+
+**Authoritative format contract:** OKF v0.1. Local summary: [`wiki/references/okf-v0.1.md`](../../wiki/references/okf-v0.1.md). Do not invent a parallel schema under `docs/`.
+
+**Roles:** the user steers topics and sources; agents write and cross-link concept pages, keep the catalog and log current, and evolve this rule with the user. Workspace routing lives in [`AGENTS.md`](../../AGENTS.md).
+
+## Layers
+
+**Flow:** raw sources → curated wiki (OKF bundle) → ops contract (this rule).
+
+| Layer | Location | Who edits |
+|-------|----------|-----------|
+| Raw sources (immutable) | [`wiki/raw/`](../../wiki/raw/) | User drops files; agents read only |
+| OKF bundle (concepts + indexes + log) | [`wiki/`](../../wiki/) | Agents create/update pages, cross-links, index, log |
+| Ops contract | This file | Human + agent co-evolve |
+
+The `wiki/` directory **is** the OKF knowledge bundle (`okf_version: "0.1"` in root `index.md`).
+
+## OKF conformance (MUST)
+
+A change is conformant only if:
+
+1. Every **non-reserved** `.md` file under `wiki/` has parseable YAML frontmatter with a non-empty `type`.
+2. Reserved filenames `index.md` and `log.md` follow OKF §6 / §7 (see below).
+3. Do **not** use `index.md` or `log.md` as concept documents.
+
+Reserved: `index.md`, `log.md`. All other `.md` files are concepts.
+
+### Concept frontmatter
+
+```yaml
+---
+type: <Type name>                  # REQUIRED (only required field)
+title: <Optional display name>
+description: <Optional one-line summary>
+resource: <Optional canonical URI>
+tags: [<tag>, <tag>, …]
+timestamp: <ISO 8601 datetime>
+# … additional producer-defined keys allowed
+---
+```
+
+- Prefer recommended fields (`title`, `description`, `tags`, `timestamp`; `resource` when describing a tangible asset).
+- `type` values are open (e.g. `Workspace`, `Entity`, `Topic`, `Reference`, `KnownIssue`) — not centrally registered.
+
+### Index files (§6)
+
+- No frontmatter except the **bundle-root** `index.md`, which MAY declare `okf_version: "0.1"`.
+- Body: one or more `#` sections with bullet entries: `* [Title](path) - short description`.
+- Entries SHOULD reuse the linked concept's `description`. Subdirectories MAY be linked with a trailing `/`.
+
+### Log files (§7)
+
+Newest first. Date headings MUST be `YYYY-MM-DD`. Entries are prose; a leading bold verb is conventional:
+
+```markdown
+# Directory Update Log
+
+## 2026-07-10
+* **Update**: Short description with optional [links](/path/to/concept.md).
+* **Creation**: …
+```
+
+### Cross-links (§5)
+
+Prefer **bundle-absolute** links (`/workspace/overview.md`) for in-bundle targets. Relative links are allowed. Broken links are not malformed.
+
+### Citations (§8)
+
+When claims come from external material, list them under `# Citations` at the bottom of the concept.
+
+## Operations
+
+- **Ingest** — Read sources or conversation; write/update concept pages; refresh affected `index.md` files; append `log.md`.
+- **Query** — Read `wiki/index.md` first, then drill into linked pages; file durable answers back into the wiki.
+- **Lint** — On request, when the wiki is large, or when the user invokes **`@wiki-lint`** — follow [**Lint**](#lint) below.
+
+## When to update (no reminder needed)
+
+Do **not** wait for "put this in the wiki." After **substantive** work, if any of this became true, integrate it before stopping:
+
+- A non-obvious fact, constraint, or command that will matter in a **later** session.
+- A mistake, false assumption, or fix worth **not repeating**.
+- A stable decision or rationale not captured in an ADR, plan, or existing wiki page.
+- A good synthesis, comparison, or answer the user might ask again — **file it**.
+
+Skip trivia, secrets, one-off typos, or anything already the single source of truth in `docs/specs/` (link instead).
+
+## What to touch each time
+
+1. **Create or edit** the relevant concept page(s) under `wiki/` (OKF frontmatter + body).
+2. Update [`wiki/index.md`](../../wiki/index.md) and the subdirectory `index.md` for any new/changed page.
+3. Append to [`wiki/log.md`](../../wiki/log.md) under today's `## YYYY-MM-DD` heading (create the heading if needed; keep newest dates first).
+4. Prefer bundle-absolute links for in-wiki targets.
+
+## Query habit
+
+When the user asks something that may already be compiled, **read `wiki/index.md` first**, then open linked pages. Prefer citing/updating the wiki over rediscovering from scratch.
+
+## Lint
+
+**Purpose:** review `wiki/` for OKF consistency and navigability.
+
+Run when the user invokes **`@wiki-lint`**, when pages grow stale, or when the wiki exceeds ~50 pages.
+
+**Scope:** all markdown under `wiki/` except `wiki/raw/` (immutable).
+
+**Checks:**
+1. **OKF conformance** — every concept has frontmatter + non-empty `type`; `index.md` / `log.md` match §6 / §7; root `index.md` declares `okf_version`.
+2. **Staleness** — pages whose `timestamp` predates newer contradicting pages.
+3. **Orphans** — concept pages with no inbound links from an `index.md` or another concept.
+4. **Coverage gaps** — concepts mentioned across pages but lacking their own page.
+5. **Broken links** — note missing targets (tolerated by OKF; still worth fixing when known).
+6. **Duplicate detection** — near-identical titles or concept IDs.
+
+**Actions:** list concrete edits (path + intent). Apply safe markdown-only fixes (cross-links, index rows, log append). Leave structural changes as recommendations. Log the pass to `wiki/log.md`.
