@@ -14,7 +14,7 @@ Before making any style, design, or architecture decision, prefer an existing ap
 - Work **spec-driven**: capture requirements and acceptance criteria in `docs/specs/` before implementing features.
 - Maintain a compounding knowledge base in `wiki/` (Karpathy LLM wiki, OKF-compliant) so context accumulates across sessions rather than being rediscovered from scratch.
 - Keep this workspace harness (`AGENTS.md`, docs, rules) aligned with what actually works.
-- Track actionable work on **GitHub Issues** ([y0n1/brewui](https://github.com/y0n1/brewui/issues)); keep requirements in `docs/specs/` and durable learnings in `wiki/`.
+- Track actionable work on **[GitHub Project #2](https://github.com/users/y0n1/projects/2)** and [Issues](https://github.com/y0n1/brewui/issues); keep requirements in `docs/specs/` and durable learnings in `wiki/`.
 
 ## Folder structure
 
@@ -26,7 +26,7 @@ Before making any style, design, or architecture decision, prefer an existing ap
 │       └── llm-wiki.mdc   ← wiki ops contract (always on)
 ├── docs/                  ← human-authored reference material
 │   └── specs/             ← requirements & feature specs (source of truth)
-│       └── AGENTS.md      ← how to author and use specs
+│       └── index.md       ← specs catalog (OKF-style index)
 └── wiki/                  ← OKF v0.1 knowledge bundle (Karpathy LLM wiki)
     ├── index.md           ← catalog + okf_version (read first when querying)
     ├── log.md             ← chronological update log (OKF §7)
@@ -41,14 +41,12 @@ Before making any style, design, or architecture decision, prefer an existing ap
 
 | Task | See |
 |------|-----|
-| Backlog (issues, bugs, tasks) | [github.com/y0n1/brewui/issues](https://github.com/y0n1/brewui/issues) · [`wiki/workspace/backlog.md`](wiki/workspace/backlog.md) |
-| Specs, requirements, acceptance criteria | [`docs/specs/`](docs/specs/) |
-| How to write / consume specs | [`docs/specs/AGENTS.md`](docs/specs/AGENTS.md) |
+| Backlog (board, issues, bugs, tasks) | [Project BrewUI](https://github.com/users/y0n1/projects/2) · [Issues](https://github.com/y0n1/brewui/issues) · [`wiki/workspace/backlog.md`](wiki/workspace/backlog.md) |
+| Specs, requirements, acceptance criteria | [`docs/specs/`](docs/specs/) · [`docs/specs/index.md`](docs/specs/index.md) |
 | Wiki maintenance (ingest / query / lint) | [`.cursor/rules/llm-wiki.mdc`](.cursor/rules/llm-wiki.mdc) |
 | Wiki knowledge base (start here when querying) | [`wiki/index.md`](wiki/index.md) |
 | Workspace overview | [`wiki/workspace/overview.md`](wiki/workspace/overview.md) |
 | OKF conformance target | [`wiki/references/okf-v0.1.md`](wiki/references/okf-v0.1.md) |
-| Personal preferences (global) | [`~/.agents/about-me.md`](~/.agents/about-me.md) |
 
 ## Triggers
 

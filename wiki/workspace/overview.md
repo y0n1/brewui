@@ -3,7 +3,7 @@ type: Workspace
 title: BrewUI Workspace Overview
 description: Mission, folder layout, Flutter desktop stack, GitHub hosting, and routing for the BrewUI contribution workspace.
 tags: [workspace, brewui, setup, flutter, github]
-timestamp: 2026-07-10T12:10:00Z
+timestamp: 2026-07-10T12:35:00Z
 ---
 
 # BrewUI Workspace Overview
@@ -14,7 +14,7 @@ This workspace is the harness for building **BrewUI** — a cross-platform deskt
 
 - Deliver a production-quality Flutter desktop app that wraps Homebrew workflows.
 - Work **spec-driven**: requirements live in `docs/specs/` before implementation.
-- Track actionable work on [GitHub Issues](https://github.com/y0n1/brewui/issues) — see [GitHub backlog](/workspace/backlog.md).
+- Track actionable work on [Project #2](https://github.com/users/y0n1/projects/2) / [Issues](https://github.com/y0n1/brewui/issues) — see [GitHub backlog](/workspace/backlog.md).
 - Maintain a compounding knowledge base in `wiki/` (this OKF bundle) so context accumulates across sessions.
 - Keep the Cursor harness (`.cursor/rules/`, `AGENTS.md`) aligned with what actually works.
 
@@ -26,7 +26,7 @@ This workspace is the harness for building **BrewUI** — a cross-platform deskt
 | Platforms | Desktop only: macOS, Linux, Windows |
 | Design approach | Spec-driven (`docs/specs/`) |
 | Knowledge format | [OKF v0.1](/references/okf-v0.1.md) |
-| Hosting / backlog | GitHub (`y0n1/brewui`) — Issues + labels |
+| Hosting / backlog | GitHub (`y0n1/brewui`) — [Project #2](https://github.com/users/y0n1/projects/2) + Issues |
 
 ## Folder layout
 
@@ -36,6 +36,7 @@ This workspace is the harness for building **BrewUI** — a cross-platform deskt
 ├── .cursor/rules/               ← workspace rules (incl. LLM wiki contract)
 ├── docs/
 │   └── specs/                   ← requirements & feature specs (source of truth)
+│       └── index.md             ← OKF-style specs catalog
 └── wiki/                        ← this OKF bundle
     ├── index.md                 ← catalog (declares okf_version)
     ├── log.md                   ← chronological update log
@@ -51,7 +52,7 @@ This workspace is the harness for building **BrewUI** — a cross-platform deskt
 | Entry point | Purpose |
 |------------|---------|
 | Workspace `AGENTS.md` (repo root) | Routing table — where to go for any task |
-| `docs/specs/AGENTS.md` | How to author and consume specs |
+| `docs/specs/index.md` | Specs catalog (OKF-style index) — how to author/consume specs |
 | `.cursor/rules/llm-wiki.mdc` | Wiki maintenance contract |
 | [`/index.md`](/index.md) | Wiki catalog — start here when querying |
 | [`/workspace/backlog.md`](/workspace/backlog.md) | GitHub Issues backlog conventions |
