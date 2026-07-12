@@ -1,10 +1,11 @@
 import 'package:brewui/domain/models/brew_detection.dart';
 import 'package:brewui/domain/models/brew_list_result.dart';
+import 'package:brewui/ui/core/command.dart';
 import 'package:brewui/ui/home/home_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-/// Home screen: Homebrew detection plus read-only installed formulae.
+/// Home screen: Homebrew detection plus read-only installed / outdated lists.
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -89,7 +90,7 @@ class _FoundView extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 560, maxHeight: 520),
+      constraints: const BoxConstraints(maxWidth: 560, maxHeight: 640),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -104,7 +105,28 @@ class _FoundView extends StatelessWidget {
           Expanded(
             child: ListenableBuilder(
               listenable: viewModel.loadInstalled,
-              builder: (context, _) => _InstalledSection(viewModel: viewModel),
+              builder: (context, _) => _FormulaListSection(
+                command: viewModel.loadInstalled,
+                result: viewModel.installed,
+                loadingLabel: 'Loading installed formulae…',
+                emptyLabel: 'No formulae installed.',
+                onRetry: viewModel.loadInstalled.execute,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text('Outdated formulae', style: theme.textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Expanded(
+            child: ListenableBuilder(
+              listenable: viewModel.loadOutdated,
+              builder: (context, _) => _FormulaListSection(
+                command: viewModel.loadOutdated,
+                result: viewModel.outdated,
+                loadingLabel: 'Loading outdated formulae…',
+                emptyLabel: 'No outdated formulae.',
+                onRetry: viewModel.loadOutdated.execute,
+              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -121,29 +143,39 @@ class _FoundView extends StatelessWidget {
   }
 }
 
-class _InstalledSection extends StatelessWidget {
-  const _InstalledSection({required this.viewModel});
+class _FormulaListSection extends StatelessWidget {
+  const _FormulaListSection({
+    required this.command,
+    required this.result,
+    required this.loadingLabel,
+    required this.emptyLabel,
+    required this.onRetry,
+  });
 
-  final HomeViewModel viewModel;
+  final Command command;
+  final BrewListResult? result;
+  final String loadingLabel;
+  final String emptyLabel;
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
-    if (viewModel.loadInstalled.running) {
-      return const Center(
+    if (command.running) {
+      return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 12),
-            Text('Loading installed formulae…'),
+            const CircularProgressIndicator(),
+            const SizedBox(height: 12),
+            Text(loadingLabel),
           ],
         ),
       );
     }
 
-    return switch (viewModel.installed) {
-      BrewListSuccess(:final names) when names.isEmpty => const Center(
-        child: Text('No formulae installed.'),
+    return switch (result) {
+      BrewListSuccess(:final names) when names.isEmpty => Center(
+        child: Text(emptyLabel),
       ),
       BrewListSuccess(:final names) => ListView.builder(
         itemCount: names.length,
@@ -161,10 +193,7 @@ class _InstalledSection extends StatelessWidget {
           children: [
             Text(message, textAlign: TextAlign.center),
             const SizedBox(height: 12),
-            OutlinedButton(
-              onPressed: viewModel.loadInstalled.execute,
-              child: const Text('Retry list'),
-            ),
+            OutlinedButton(onPressed: onRetry, child: const Text('Retry list')),
           ],
         ),
       ),

@@ -22,17 +22,44 @@ class BrewRepositoryImpl implements BrewRepository {
 
   @override
   Future<BrewListResult> listInstalledFormulae(String executable) async {
+    return _listFormulae(executable, const [
+      'list',
+      '--formula',
+    ], label: 'brew list --formula');
+  }
+
+  @override
+  Future<BrewListResult> listOutdatedFormulae(String executable) async {
+    return _listFormulae(
+      executable,
+      const ['outdated', '--formula'],
+      label: 'brew outdated --formula',
+      // Default outdated lines may include versions; keep the name token only.
+      parseLine: _formulaNameToken,
+    );
+  }
+
+  Future<BrewListResult> _listFormulae(
+    String executable,
+    List<String> args, {
+    required String label,
+    String Function(String line)? parseLine,
+  }) async {
     try {
-      final result = await cli.run(executable, const ['list', '--formula']);
+      final result = await cli.run(executable, args);
       if (result.exitCode != 0) {
         return BrewListError(
           _shortMessage(
             result.stderr,
-            fallback: 'brew list --formula failed (exit ${result.exitCode})',
+            fallback: '$label failed (exit ${result.exitCode})',
           ),
         );
       }
-      return BrewListSuccess(_nonEmptyLines(result.stdout));
+      final names = _nonEmptyLines(result.stdout)
+          .map(parseLine ?? (line) => line)
+          .where((name) => name.isNotEmpty)
+          .toList(growable: false);
+      return BrewListSuccess(names);
     } on ProcessException catch (e) {
       return BrewListError(e.message);
     } catch (e) {
@@ -130,6 +157,12 @@ class BrewRepositoryImpl implements BrewRepository {
         .map((l) => l.trim())
         .where((l) => l.isNotEmpty)
         .toList(growable: false);
+  }
+
+  /// First whitespace-separated token (formula name) from an outdated line.
+  static String _formulaNameToken(String line) {
+    final end = line.indexOf(RegExp(r'\s'));
+    return end < 0 ? line : line.substring(0, end);
   }
 
   static String _shortMessage(Object? stderr, {required String fallback}) {

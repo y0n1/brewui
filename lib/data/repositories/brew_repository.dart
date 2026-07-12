@@ -8,4 +8,7 @@ abstract class BrewRepository {
 
   /// Lists installed formulae via `brew list --formula` using [executable].
   Future<BrewListResult> listInstalledFormulae(String executable);
+
+  /// Lists outdated formulae via `brew outdated --formula` using [executable].
+  Future<BrewListResult> listOutdatedFormulae(String executable);
 }

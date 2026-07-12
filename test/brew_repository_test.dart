@@ -196,5 +196,83 @@ void main() {
         );
       },
     );
+
+    test(
+      'listOutdatedFormulae returns names from brew outdated --formula',
+      () async {
+        final repository = BrewRepositoryImpl(
+          cli: BrewCliService(
+            run: (executable, args) async {
+              expect(executable, '/opt/homebrew/bin/brew');
+              expect(args, ['outdated', '--formula']);
+              return ProcessResult(
+                0,
+                0,
+                'openssl@3 (3.3.0) < 3.3.1\ngit\n\ncurl (8.0.0) < 8.1.0\n',
+                '',
+              );
+            },
+          ),
+          fallbackPaths: const [],
+        );
+
+        final result = await repository.listOutdatedFormulae(
+          '/opt/homebrew/bin/brew',
+        );
+
+        expect(
+          result,
+          isA<BrewListSuccess>().having((r) => r.names, 'names', [
+            'openssl@3',
+            'git',
+            'curl',
+          ]),
+        );
+      },
+    );
+
+    test('listOutdatedFormulae allows empty list', () async {
+      final repository = BrewRepositoryImpl(
+        cli: BrewCliService(
+          run: (executable, args) async {
+            expect(args, ['outdated', '--formula']);
+            return ProcessResult(0, 0, '', '');
+          },
+        ),
+        fallbackPaths: const [],
+      );
+
+      final result = await repository.listOutdatedFormulae('brew');
+
+      expect(
+        result,
+        isA<BrewListSuccess>().having((r) => r.names, 'names', isEmpty),
+      );
+    });
+
+    test(
+      'listOutdatedFormulae returns BrewListError on non-zero exit',
+      () async {
+        final repository = BrewRepositoryImpl(
+          cli: BrewCliService(
+            run: (executable, args) async {
+              return ProcessResult(0, 1, '', 'fetch failed\n');
+            },
+          ),
+          fallbackPaths: const [],
+        );
+
+        final result = await repository.listOutdatedFormulae('brew');
+
+        expect(
+          result,
+          isA<BrewListError>().having(
+            (r) => r.message,
+            'message',
+            'fetch failed',
+          ),
+        );
+      },
+    );
   });
 }
