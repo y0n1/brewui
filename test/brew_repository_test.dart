@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:brewui/data/repositories/brew_repository_impl.dart';
 import 'package:brewui/data/services/brew_cli_service.dart';
 import 'package:brewui/domain/models/brew_detection.dart';
+import 'package:brewui/domain/models/brew_list_result.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 bool _argsEq(List<String> actual, List<String> expected) {
@@ -123,5 +124,77 @@ void main() {
         ),
       );
     });
+
+    test(
+      'listInstalledFormulae returns names from brew list --formula',
+      () async {
+        final repository = BrewRepositoryImpl(
+          cli: BrewCliService(
+            run: (executable, args) async {
+              expect(executable, '/opt/homebrew/bin/brew');
+              expect(args, ['list', '--formula']);
+              return ProcessResult(0, 0, 'git\nwget\n\ncurl\n', '');
+            },
+          ),
+          fallbackPaths: const [],
+        );
+
+        final result = await repository.listInstalledFormulae(
+          '/opt/homebrew/bin/brew',
+        );
+
+        expect(
+          result,
+          isA<BrewListSuccess>().having((r) => r.names, 'names', [
+            'git',
+            'wget',
+            'curl',
+          ]),
+        );
+      },
+    );
+
+    test('listInstalledFormulae allows empty list', () async {
+      final repository = BrewRepositoryImpl(
+        cli: BrewCliService(
+          run: (executable, args) async {
+            return ProcessResult(0, 0, '', '');
+          },
+        ),
+        fallbackPaths: const [],
+      );
+
+      final result = await repository.listInstalledFormulae('brew');
+
+      expect(
+        result,
+        isA<BrewListSuccess>().having((r) => r.names, 'names', isEmpty),
+      );
+    });
+
+    test(
+      'listInstalledFormulae returns BrewListError on non-zero exit',
+      () async {
+        final repository = BrewRepositoryImpl(
+          cli: BrewCliService(
+            run: (executable, args) async {
+              return ProcessResult(0, 1, '', 'database locked\n');
+            },
+          ),
+          fallbackPaths: const [],
+        );
+
+        final result = await repository.listInstalledFormulae('brew');
+
+        expect(
+          result,
+          isA<BrewListError>().having(
+            (r) => r.message,
+            'message',
+            'database locked',
+          ),
+        );
+      },
+    );
   });
 }
