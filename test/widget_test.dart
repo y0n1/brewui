@@ -2,15 +2,21 @@ import 'dart:async';
 
 import 'package:brewui/data/repositories/brew_repository.dart';
 import 'package:brewui/domain/models/brew_detection.dart';
+import 'package:brewui/domain/models/brew_list_result.dart';
 import 'package:brewui/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeBrewRepository implements BrewRepository {
-  _FakeBrewRepository(this._results);
+  _FakeBrewRepository(
+    this._results, {
+    this.installed = const BrewListSuccess([]),
+  });
 
   final List<BrewDetection> _results;
+  BrewListResult installed;
   int detectCalls = 0;
+  int listCalls = 0;
   Completer<void>? gate;
 
   @override
@@ -22,6 +28,12 @@ class _FakeBrewRepository implements BrewRepository {
     }
     final index = detectCalls - 1;
     return _results[index.clamp(0, _results.length - 1)];
+  }
+
+  @override
+  Future<BrewListResult> listInstalledFormulae(String executable) async {
+    listCalls++;
+    return installed;
   }
 }
 
@@ -66,6 +78,42 @@ void main() {
     expect(find.text('Prefix: /opt/homebrew'), findsOneWidget);
   });
 
+  testWidgets('shows installed formulae names', (tester) async {
+    await tester.pumpWidget(
+      BrewUiApp(
+        brewRepository: _FakeBrewRepository([
+          const BrewFound(
+            version: 'Homebrew 6.0.9',
+            executablePath: '/opt/homebrew/bin/brew',
+          ),
+        ], installed: const BrewListSuccess(['curl', 'git'])),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Installed formulae'), findsOneWidget);
+    expect(find.text('curl'), findsOneWidget);
+    expect(find.text('git'), findsOneWidget);
+    expect(find.text('Install'), findsNothing);
+    expect(find.text('Uninstall'), findsNothing);
+  });
+
+  testWidgets('shows empty installed list message', (tester) async {
+    await tester.pumpWidget(
+      BrewUiApp(
+        brewRepository: _FakeBrewRepository([
+          const BrewFound(
+            version: 'Homebrew 6.0.9',
+            executablePath: '/opt/homebrew/bin/brew',
+          ),
+        ]),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('No formulae installed.'), findsOneWidget);
+  });
+
   testWidgets('shows not-found state', (tester) async {
     await tester.pumpWidget(
       BrewUiApp(brewRepository: _FakeBrewRepository([const BrewNotFound()])),
@@ -74,6 +122,7 @@ void main() {
 
     expect(find.text('Homebrew not found'), findsOneWidget);
     expect(find.text('Retry'), findsOneWidget);
+    expect(find.text('Installed formulae'), findsNothing);
   });
 
   testWidgets('shows error state with message', (tester) async {

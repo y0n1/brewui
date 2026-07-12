@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:brewui/data/repositories/brew_repository.dart';
 import 'package:brewui/data/services/brew_cli_service.dart';
 import 'package:brewui/domain/models/brew_detection.dart';
+import 'package:brewui/domain/models/brew_list_result.dart';
 
 /// Detects whether Homebrew is available and reports version / path.
 ///
@@ -18,6 +19,26 @@ class BrewRepositoryImpl implements BrewRepository {
 
   final BrewCliService cli;
   final List<String> _fallbackPaths;
+
+  @override
+  Future<BrewListResult> listInstalledFormulae(String executable) async {
+    try {
+      final result = await cli.run(executable, const ['list', '--formula']);
+      if (result.exitCode != 0) {
+        return BrewListError(
+          _shortMessage(
+            result.stderr,
+            fallback: 'brew list --formula failed (exit ${result.exitCode})',
+          ),
+        );
+      }
+      return BrewListSuccess(_nonEmptyLines(result.stdout));
+    } on ProcessException catch (e) {
+      return BrewListError(e.message);
+    } catch (e) {
+      return BrewListError(e.toString());
+    }
+  }
 
   @override
   Future<BrewDetection> detect() async {
@@ -100,6 +121,15 @@ class BrewRepositoryImpl implements BrewRepository {
         .split('\n')
         .firstWhere((l) => l.trim().isNotEmpty, orElse: () => '');
     return line.trim();
+  }
+
+  static List<String> _nonEmptyLines(Object? output) {
+    final text = output?.toString() ?? '';
+    return text
+        .split('\n')
+        .map((l) => l.trim())
+        .where((l) => l.isNotEmpty)
+        .toList(growable: false);
   }
 
   static String _shortMessage(Object? stderr, {required String fallback}) {
