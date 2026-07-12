@@ -15,11 +15,7 @@ class BrewUiApp extends StatelessWidget {
         colorScheme: .fromSeed(seedColor: Colors.brown),
         useMaterial3: true,
       ),
-      home: const Scaffold(
-        body: Center(
-          child: Text('BrewUI'),
-        ),
-      ),
+      home: const Scaffold(body: Center(child: Text('BrewUI'))),
     );
   }
 }
