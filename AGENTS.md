@@ -17,7 +17,8 @@ Run from this repository root:
 | Run (macOS) | `flutter run -d macos` |
 | Build (macOS) | `flutter build macos` |
 | Test | `flutter test` |
-| Analyze | `flutter analyze` |
+| Analyze | `flutter analyze --fatal-infos` |
+| Format check | `dart format --output=none --set-exit-if-changed .` |
 
 Linux / Windows (when developing on those hosts): `flutter run -d linux` or `flutter run -d windows`.
 
@@ -26,3 +27,4 @@ Linux / Windows (when developing on those hosts): `flutter run -d linux` or `flu
 - Open or pick up work via [Issues](https://github.com/y0n1/brewui/issues) and the [BrewUI project board](https://github.com/users/y0n1/projects/2).
 - Prefer issue acceptance criteria over inventing scope in code.
 - Desktop only — do not add mobile or web targets.
+- Before opening a PR, run the same gates as CI: `flutter analyze --fatal-infos`, `dart format --output=none --set-exit-if-changed .`, and `flutter test` (see `.github/workflows/ci.yml`).
