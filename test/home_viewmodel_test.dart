@@ -9,15 +9,19 @@ class _FakeBrewRepository implements BrewRepository {
   _FakeBrewRepository(
     this.detection, {
     this.installed = const BrewListSuccess([]),
+    this.outdated = const BrewListSuccess([]),
     this.delay,
   });
 
   BrewDetection detection;
   BrewListResult installed;
+  BrewListResult outdated;
   Duration? delay;
   int detectCalls = 0;
-  int listCalls = 0;
-  String? lastListExecutable;
+  int listInstalledCalls = 0;
+  int listOutdatedCalls = 0;
+  String? lastInstalledExecutable;
+  String? lastOutdatedExecutable;
 
   @override
   Future<BrewDetection> detect() async {
@@ -31,9 +35,16 @@ class _FakeBrewRepository implements BrewRepository {
 
   @override
   Future<BrewListResult> listInstalledFormulae(String executable) async {
-    listCalls++;
-    lastListExecutable = executable;
+    listInstalledCalls++;
+    lastInstalledExecutable = executable;
     return installed;
+  }
+
+  @override
+  Future<BrewListResult> listOutdatedFormulae(String executable) async {
+    listOutdatedCalls++;
+    lastOutdatedExecutable = executable;
+    return outdated;
   }
 }
 
@@ -43,12 +54,13 @@ Future<void> _waitFor(Command command) async {
   }
 }
 
-Future<void> _waitForDetectAndList(HomeViewModel viewModel) async {
+Future<void> _waitForDetectAndLists(HomeViewModel viewModel) async {
   await _waitFor(viewModel.detect);
   if (viewModel.detection is BrewFound) {
-    // loadInstalled may start after detect notifies; give it a tick.
+    // Lists may start after detect notifies; give them a tick.
     await Future<void>.delayed(Duration.zero);
     await _waitFor(viewModel.loadInstalled);
+    await _waitFor(viewModel.loadOutdated);
   }
 }
 
@@ -62,7 +74,7 @@ void main() {
         ),
       );
       final viewModel = HomeViewModel(brewRepository: repository);
-      await _waitForDetectAndList(viewModel);
+      await _waitForDetectAndLists(viewModel);
 
       expect(repository.detectCalls, 1);
       expect(viewModel.detection, isA<BrewFound>());
@@ -83,29 +95,36 @@ void main() {
       expect(viewModel.detect.running, isTrue);
       expect(viewModel.detection, isNull);
 
-      await _waitForDetectAndList(viewModel);
+      await _waitForDetectAndLists(viewModel);
 
       expect(viewModel.detect.running, isFalse);
       expect(viewModel.detection, isA<BrewFound>());
       viewModel.dispose();
     });
 
-    test('loads installed formulae after BrewFound', () async {
+    test('loads installed and outdated formulae after BrewFound', () async {
       final repository = _FakeBrewRepository(
         const BrewFound(
           version: 'Homebrew 6.0.9',
           executablePath: '/opt/homebrew/bin/brew',
         ),
         installed: const BrewListSuccess(['git', 'curl']),
+        outdated: const BrewListSuccess(['openssl@3']),
       );
       final viewModel = HomeViewModel(brewRepository: repository);
-      await _waitForDetectAndList(viewModel);
+      await _waitForDetectAndLists(viewModel);
 
-      expect(repository.listCalls, 1);
-      expect(repository.lastListExecutable, '/opt/homebrew/bin/brew');
+      expect(repository.listInstalledCalls, 1);
+      expect(repository.listOutdatedCalls, 1);
+      expect(repository.lastInstalledExecutable, '/opt/homebrew/bin/brew');
+      expect(repository.lastOutdatedExecutable, '/opt/homebrew/bin/brew');
       expect(
         viewModel.installed,
         isA<BrewListSuccess>().having((r) => r.names, 'names', ['git', 'curl']),
+      );
+      expect(
+        viewModel.outdated,
+        isA<BrewListSuccess>().having((r) => r.names, 'names', ['openssl@3']),
       );
       viewModel.dispose();
     });
@@ -113,10 +132,12 @@ void main() {
     test('does not list formulae when brew is not found', () async {
       final repository = _FakeBrewRepository(const BrewNotFound());
       final viewModel = HomeViewModel(brewRepository: repository);
-      await _waitForDetectAndList(viewModel);
+      await _waitForDetectAndLists(viewModel);
 
-      expect(repository.listCalls, 0);
+      expect(repository.listInstalledCalls, 0);
+      expect(repository.listOutdatedCalls, 0);
       expect(viewModel.installed, isNull);
+      expect(viewModel.outdated, isNull);
       viewModel.dispose();
     });
 
@@ -127,20 +148,24 @@ void main() {
           executablePath: '/opt/homebrew/bin/brew',
         ),
         installed: const BrewListSuccess(['git']),
+        outdated: const BrewListSuccess(['curl']),
       );
       final viewModel = HomeViewModel(brewRepository: repository);
-      await _waitForDetectAndList(viewModel);
+      await _waitForDetectAndLists(viewModel);
       expect(viewModel.detection, isA<BrewFound>());
       expect(viewModel.installed, isA<BrewListSuccess>());
+      expect(viewModel.outdated, isA<BrewListSuccess>());
 
       repository.detection = const BrewNotFound();
       await viewModel.detect.execute();
-      await _waitForDetectAndList(viewModel);
+      await _waitForDetectAndLists(viewModel);
 
       expect(viewModel.detection, isA<BrewNotFound>());
       expect(viewModel.installed, isNull);
+      expect(viewModel.outdated, isNull);
       expect(repository.detectCalls, 2);
-      expect(repository.listCalls, 1);
+      expect(repository.listInstalledCalls, 1);
+      expect(repository.listOutdatedCalls, 1);
       viewModel.dispose();
     });
 
@@ -149,7 +174,7 @@ void main() {
         const BrewDetectionError('permission denied'),
       );
       final viewModel = HomeViewModel(brewRepository: repository);
-      await _waitForDetectAndList(viewModel);
+      await _waitForDetectAndLists(viewModel);
 
       expect(
         viewModel.detection,
@@ -159,11 +184,12 @@ void main() {
           'permission denied',
         ),
       );
-      expect(repository.listCalls, 0);
+      expect(repository.listInstalledCalls, 0);
+      expect(repository.listOutdatedCalls, 0);
       viewModel.dispose();
     });
 
-    test('surfaces BrewListError from repository', () async {
+    test('surfaces BrewListError for installed from repository', () async {
       final repository = _FakeBrewRepository(
         const BrewFound(
           version: 'Homebrew 6.0.9',
@@ -172,7 +198,7 @@ void main() {
         installed: const BrewListError('database locked'),
       );
       final viewModel = HomeViewModel(brewRepository: repository);
-      await _waitForDetectAndList(viewModel);
+      await _waitForDetectAndLists(viewModel);
 
       expect(
         viewModel.installed,
@@ -180,6 +206,28 @@ void main() {
           (e) => e.message,
           'message',
           'database locked',
+        ),
+      );
+      viewModel.dispose();
+    });
+
+    test('surfaces BrewListError for outdated from repository', () async {
+      final repository = _FakeBrewRepository(
+        const BrewFound(
+          version: 'Homebrew 6.0.9',
+          executablePath: '/opt/homebrew/bin/brew',
+        ),
+        outdated: const BrewListError('fetch failed'),
+      );
+      final viewModel = HomeViewModel(brewRepository: repository);
+      await _waitForDetectAndLists(viewModel);
+
+      expect(
+        viewModel.outdated,
+        isA<BrewListError>().having(
+          (e) => e.message,
+          'message',
+          'fetch failed',
         ),
       );
       viewModel.dispose();

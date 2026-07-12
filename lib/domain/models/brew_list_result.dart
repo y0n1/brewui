@@ -7,7 +7,7 @@ sealed class BrewListResult {
 final class BrewListSuccess extends BrewListResult {
   const BrewListSuccess(this.names);
 
-  /// Formula names from `brew list --formula` (one per line).
+  /// Formula names (one per entry) from list / outdated commands.
   final List<String> names;
 }
 

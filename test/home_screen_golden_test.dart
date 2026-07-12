@@ -14,10 +14,12 @@ class _FakeBrewRepository implements BrewRepository {
   _FakeBrewRepository(
     this.detection, {
     this.installed = const BrewListSuccess([]),
+    this.outdated = const BrewListSuccess([]),
   });
 
   final BrewDetection detection;
   final BrewListResult installed;
+  final BrewListResult outdated;
 
   @override
   Future<BrewDetection> detect() async => detection;
@@ -25,19 +27,28 @@ class _FakeBrewRepository implements BrewRepository {
   @override
   Future<BrewListResult> listInstalledFormulae(String executable) async =>
       installed;
+
+  @override
+  Future<BrewListResult> listOutdatedFormulae(String executable) async =>
+      outdated;
 }
 
 Future<void> _pumpHome(
   WidgetTester tester, {
   required BrewDetection detection,
   BrewListResult installed = const BrewListSuccess([]),
+  BrewListResult outdated = const BrewListSuccess([]),
 }) async {
   await tester.binding.setSurfaceSize(const Size(800, 600));
   addTearDown(() => tester.binding.setSurfaceSize(null));
 
   await tester.pumpWidget(
     BrewUiApp(
-      brewRepository: _FakeBrewRepository(detection, installed: installed),
+      brewRepository: _FakeBrewRepository(
+        detection,
+        installed: installed,
+        outdated: outdated,
+      ),
     ),
   );
   await tester.pumpAndSettle();
@@ -45,7 +56,7 @@ Future<void> _pumpHome(
 
 void main() {
   group('HomeScreen goldens', () {
-    testWidgets('found with installed formulae', (tester) async {
+    testWidgets('found with installed and outdated formulae', (tester) async {
       await _pumpHome(
         tester,
         detection: const BrewFound(
@@ -54,6 +65,7 @@ void main() {
           prefix: '/opt/homebrew',
         ),
         installed: const BrewListSuccess(['curl', 'git', 'wget']),
+        outdated: const BrewListSuccess(['openssl@3']),
       );
 
       await expectLater(
@@ -62,7 +74,7 @@ void main() {
       );
     }, skip: !_runGoldens);
 
-    testWidgets('found with empty installed list', (tester) async {
+    testWidgets('found with empty lists', (tester) async {
       await _pumpHome(
         tester,
         detection: const BrewFound(
@@ -71,6 +83,7 @@ void main() {
           prefix: '/opt/homebrew',
         ),
         installed: const BrewListSuccess([]),
+        outdated: const BrewListSuccess([]),
       );
 
       await expectLater(

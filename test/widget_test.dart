@@ -11,12 +11,15 @@ class _FakeBrewRepository implements BrewRepository {
   _FakeBrewRepository(
     this._results, {
     this.installed = const BrewListSuccess([]),
+    this.outdated = const BrewListSuccess([]),
   });
 
   final List<BrewDetection> _results;
   BrewListResult installed;
+  BrewListResult outdated;
   int detectCalls = 0;
-  int listCalls = 0;
+  int listInstalledCalls = 0;
+  int listOutdatedCalls = 0;
   Completer<void>? gate;
 
   @override
@@ -32,8 +35,14 @@ class _FakeBrewRepository implements BrewRepository {
 
   @override
   Future<BrewListResult> listInstalledFormulae(String executable) async {
-    listCalls++;
+    listInstalledCalls++;
     return installed;
+  }
+
+  @override
+  Future<BrewListResult> listOutdatedFormulae(String executable) async {
+    listOutdatedCalls++;
+    return outdated;
   }
 }
 
@@ -98,6 +107,25 @@ void main() {
     expect(find.text('Uninstall'), findsNothing);
   });
 
+  testWidgets('shows outdated formulae names', (tester) async {
+    await tester.pumpWidget(
+      BrewUiApp(
+        brewRepository: _FakeBrewRepository([
+          const BrewFound(
+            version: 'Homebrew 6.0.9',
+            executablePath: '/opt/homebrew/bin/brew',
+          ),
+        ], outdated: const BrewListSuccess(['openssl@3', 'wget'])),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Outdated formulae'), findsOneWidget);
+    expect(find.text('openssl@3'), findsOneWidget);
+    expect(find.text('wget'), findsOneWidget);
+    expect(find.text('Upgrade'), findsNothing);
+  });
+
   testWidgets('shows empty installed list message', (tester) async {
     await tester.pumpWidget(
       BrewUiApp(
@@ -112,6 +140,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('No formulae installed.'), findsOneWidget);
+    expect(find.text('No outdated formulae.'), findsOneWidget);
   });
 
   testWidgets('shows not-found state', (tester) async {
@@ -123,6 +152,7 @@ void main() {
     expect(find.text('Homebrew not found'), findsOneWidget);
     expect(find.text('Retry'), findsOneWidget);
     expect(find.text('Installed formulae'), findsNothing);
+    expect(find.text('Outdated formulae'), findsNothing);
   });
 
   testWidgets('shows error state with message', (tester) async {
