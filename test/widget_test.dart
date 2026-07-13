@@ -64,10 +64,10 @@ void main() {
     repository.gate!.complete();
     await tester.pumpAndSettle();
 
-    expect(find.text('Homebrew detected'), findsOneWidget);
+    expect(find.text('Homebrew 6.0.9'), findsOneWidget);
   });
 
-  testWidgets('shows Homebrew detected with version and path', (tester) async {
+  testWidgets('shows compact status with version and path', (tester) async {
     await tester.pumpWidget(
       BrewUiApp(
         brewRepository: _FakeBrewRepository([
@@ -81,13 +81,15 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Homebrew detected'), findsOneWidget);
-    expect(find.text('Version: Homebrew 6.0.9'), findsOneWidget);
-    expect(find.text('Path: /opt/homebrew/bin/brew'), findsOneWidget);
-    expect(find.text('Prefix: /opt/homebrew'), findsOneWidget);
+    expect(find.text('Homebrew 6.0.9'), findsOneWidget);
+    expect(
+      find.text('/opt/homebrew/bin/brew  ·  prefix /opt/homebrew'),
+      findsOneWidget,
+    );
+    expect(find.text('Refresh'), findsOneWidget);
   });
 
-  testWidgets('shows installed formulae names', (tester) async {
+  testWidgets('shows installed formulae names with count', (tester) async {
     await tester.pumpWidget(
       BrewUiApp(
         brewRepository: _FakeBrewRepository([
@@ -101,13 +103,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Installed formulae'), findsOneWidget);
+    expect(find.text('2'), findsOneWidget);
     expect(find.text('curl'), findsOneWidget);
     expect(find.text('git'), findsOneWidget);
     expect(find.text('Install'), findsNothing);
     expect(find.text('Uninstall'), findsNothing);
   });
 
-  testWidgets('shows outdated formulae names', (tester) async {
+  testWidgets('shows outdated formulae names with count', (tester) async {
     await tester.pumpWidget(
       BrewUiApp(
         brewRepository: _FakeBrewRepository([
@@ -126,7 +129,7 @@ void main() {
     expect(find.text('Upgrade'), findsNothing);
   });
 
-  testWidgets('shows empty installed list message', (tester) async {
+  testWidgets('shows empty list messages and zero counts', (tester) async {
     await tester.pumpWidget(
       BrewUiApp(
         brewRepository: _FakeBrewRepository([
@@ -141,6 +144,7 @@ void main() {
 
     expect(find.text('No formulae installed.'), findsOneWidget);
     expect(find.text('No outdated formulae.'), findsOneWidget);
+    expect(find.text('0'), findsNWidgets(2));
   });
 
   testWidgets('shows not-found state', (tester) async {
@@ -188,6 +192,23 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(repository.detectCalls, 2);
-    expect(find.text('Homebrew detected'), findsOneWidget);
+    expect(find.text('Homebrew 6.0.9'), findsOneWidget);
+  });
+
+  testWidgets('Refresh re-runs detection from found state', (tester) async {
+    final repository = _FakeBrewRepository([
+      const BrewFound(
+        version: 'Homebrew 6.0.9',
+        executablePath: '/opt/homebrew/bin/brew',
+      ),
+    ]);
+
+    await tester.pumpWidget(BrewUiApp(brewRepository: repository));
+    await tester.pumpAndSettle();
+
+    expect(repository.detectCalls, 1);
+    await tester.tap(find.text('Refresh'));
+    await tester.pumpAndSettle();
+    expect(repository.detectCalls, 2);
   });
 }

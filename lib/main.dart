@@ -3,6 +3,7 @@ import 'package:brewui/data/repositories/brew_repository_impl.dart';
 import 'package:brewui/data/services/brew_cli_service.dart';
 import 'package:brewui/ui/home/home_screen.dart';
 import 'package:brewui/ui/home/home_viewmodel.dart';
+import 'package:brewui/ui/theme/brew_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -35,10 +36,7 @@ class BrewUiApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'BrewUI',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.brown),
-          useMaterial3: true,
-        ),
+        theme: buildBrewTheme(),
         home: const HomeScreen(),
       ),
     );
